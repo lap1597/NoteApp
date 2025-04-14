@@ -8,29 +8,30 @@
         
         <label for="publishToCalendar">Publish to Google Calendar</label>
         <input type="checkbox" id="publishToCalendar" name="publishToCalendar" value="true">
+      
     </div>
     <div id="calendarInputs" style="display: none;">
         <label for="summary">Event Title:</label>
-        <input type="text" name="summary" id="summary" class="feedback-input" required><br>
+        <input type="text" name="summary" id="summary" class="feedback-input"><br>
 
         <div id="dateInputs">
             <label for="start">Start Date:</label>
-            <input type="date" id="start" name="start" class="feedback-input" required><br>
+            <input type="date" id="start" name="start" class="feedback-input" ><br>
 
             <label for="end">End Date:</label>
-            <input type="date" id="end" name="end" class="feedback-input" required><br>
+            <input type="date" id="end" name="end" class="feedback-input"><br>
         </div>
 
         <div id="timeInputs">
             <label for="startTime">Start Time:</label>
-            <input type="time" id="startTime" name="startTime" class="feedback-input" required><br>
+            <input type="time" id="startTime" name="startTime" class="feedback-input"><br>
 
             <label for="endTime">End Time:</label>
-            <input type="time" id="endTime" name="endTime" class="feedback-input" required><br>
+            <input type="time" id="endTime" name="endTime" class="feedback-input"><br>
         </div>
 
         <label for="category">Category:</label>
-        <select id="category" name="category" class="feedback-input" required>
+        <select id="category" name="category" class="feedback-input" >
             <option value="class">Class</option>
             <option value="study">Study Session</option>
             <option value="meeting">Meeting</option>
@@ -47,22 +48,32 @@
     </div>
     <div>
    
-    <button type="submit">Add Note</button>
+        <button type="submit">Add Note</button>
     </div>
+
 </form>
 
-<script>
-    document.getElementById('publishToCalendar').addEventListener('change', function() {
-        console.log('publishToCalendar changed');
-        var calendarInputs = document.getElementById('calendarInputs');
-        calendarInputs.style.display = this.checked ? 'block' : 'none';
-    });
 
-    // document.getElementById('useAiSuggestion').addEventListener('change', function() {
-    //     console.log('useAiSuggestion changed');
-    //     var timeInputs = document.getElementById('timeInputs');
-    //     timeInputs.style.display = this.checked ? 'none' : 'block';
-    // });
+<script>
+    document.getElementById('publishToCalendar').addEventListener('change', function () {
+        const calendarInputs = document.getElementById('calendarInputs');
+        const isPublishChecked = this.checked;
+    
+        // Show or hide calendar input fields
+        calendarInputs.style.display = isPublishChecked ? 'block' : 'none';
+    
+        // Dynamically manage input states
+        document.querySelectorAll('#calendarInputs .feedback-input').forEach(function (input) {
+            if (isPublishChecked) {
+                input.removeAttribute('disabled'); // Enable input
+                input.setAttribute('required', 'required'); // Add required validation
+            } else {
+                input.setAttribute('disabled', 'disabled'); // Disable input
+                input.removeAttribute('required'); // Remove required validation
+                input.value = ''; // Clear the value
+            }
+        });
+    });
     document.getElementById('useAiSuggestion').addEventListener('change', function() {
         console.log('useAiSuggestion changed');
         var timeInputs = document.getElementById('timeInputs');
@@ -81,7 +92,21 @@
             endTime.setAttribute('required', 'required');
         }
     });
+
+    // Ensure proper behavior on form submission
+    document.getElementById('noteForm').addEventListener('submit', function (event) {
+        const isPublishChecked = document.getElementById('publishToCalendar').checked;
+    
+        if (!isPublishChecked) {
+            // Disable all inputs inside calendarInputs
+            document.querySelectorAll('#calendarInputs .feedback-input').forEach(function (input) {
+                input.setAttribute('disabled', 'disabled');
+                input.removeAttribute('required'); // Ensure no validation on hidden inputs
+            });
+        }
+    });
 </script>
+
 
 
 

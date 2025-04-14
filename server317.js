@@ -28,6 +28,14 @@ app.use(express.static("public"));
 
 let myData;
 // Create connection pool
+myData = mysql.createPool({
+    host: process.env.DB_HOST,       // Your database host
+    user: process.env.SQL_USERNAME, // Your database username
+    password: process.env.SQL_PASS, // Your database password
+    database: process.env.SQL_NAME, // Your database name
+    multipleStatements: true
+
+});
 
 
 const openai = new OpenAI({
@@ -50,6 +58,7 @@ const isAuthenticated = (req, res, next) => {
         res.redirect("/"); // Redirect to login page if not authenticated
     }
 };
+
 const CATEGORY_COLORS = {
     'class': '1',   // Light blue
     'study': '2',   // Light green
@@ -73,13 +82,30 @@ app.get("/contact", (req, res) => {
 });
 app.get("/note", isAuthenticated, (req, res) => {
 
+    //check connection
+    myData.getConnection((err, connection) => {
+        if (err) {
+            console.error("Error connecting to the database:", err);
+            return;
+        }
+        console.log("Database connected successfully.");
+        connection.query("SELECT * FROM users", (queryErr, results) => {
+            if (queryErr) {
+                console.error("Error executing query:", queryErr);
+            } else {
+                console.log("Query Results:", results);
+            }
+        });
+        connection.release();
+    });
     res.render("note.ejs", { isAuthenticated: !!req.session.user });
 });
 
 
 app.get("/quit", (req, res) => {
- 
-    res.render("index.ejs", { isAuthenticated: !!req.session.user });
+    req.session.destroy();
+    
+    res.redirect("/");
 });
 
 
@@ -87,7 +113,7 @@ app.get("/auth/google", (req, res) => {
     const scopes = [
         'https://www.googleapis.com/auth/userinfo.email',
         'https://www.googleapis.com/auth/calendar',
-        'https://www.googleapis.com/auth/userinfo.profile',
+        // 'https://www.googleapis.com/auth/userinfo.profile',
         'https://www.googleapis.com/auth/gmail.send'
     ];
     const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${googleClientId}&redirect_uri=${redirectUri}&response_type=code&scope=${scopes.join(' ')}&access_type=offline`;
@@ -132,29 +158,43 @@ app.get("/auth/google/callback", async (req, res) => {
 
         const userInfo = await userInfoResponse.json();
         if (userInfo.email_verified) {
-            req.session.user = userInfo; 
-        //       myData = mysql.createPool({
-        //         host: process.env.DB_HOST,       // Your database host
-        //         user: process.env.SQL_USERNAME, // Your database username
-        //         password: process.env.SQL_PASS, // Your database password
-        //         database: process.env.SQL_NAME, // Your database name
-        //         multipleStatements: true
-        //     });
-          
-        //     const insertUserQuery = `
-        //     INSERT INTO users (email, name)
-        //     VALUES (?, ?)
-        //     ON DUPLICATE KEY UPDATE name = VALUES(name);
-        // `;
 
-        // // Insert the user into the database
-        // myData.query(insertUserQuery, [userInfo.email, userInfo.name], (err, result) => {
-        //     if (err) {
-        //         console.error("Error inserting user into the database:", err);
-        //         res.status(500).send("Internal Server Error");
-        //         return;
-        //     }
-        // });
+            req.session.user = userInfo; 
+            myData = mysql.createPool({
+                host: process.env.DB_HOST,       // Your database host
+                user: process.env.SQL_USERNAME, // Your database username
+                password: process.env.SQL_PASS, // Your database password
+                database: process.env.SQL_NAME, // Your database name
+                multipleStatements: true
+            });
+      
+            const insertUserQuery = `
+                INSERT INTO users (email, name)
+                VALUES (?, ?)
+                ON DUPLICATE KEY UPDATE name = VALUES(name);
+            `;
+         
+            // Insert the user into the database
+         //   console.log("Running Query:", insertUserQuery, [req.session.user.email, req.session.user.name]);
+            myData.query(insertUserQuery, [req.session.user.email, req.session.user.name], (err, result) => {
+                if (err) {
+                    console.error("Error inserting user into the database:", err);
+                    res.status(500).send("Internal Server Error");
+                    return;
+                }
+                // console.log("ERROR?");
+                console.log("Result:", result);
+        
+                if (result.affectedRows === 1) {
+                    console.log("New user inserted.");
+                } else if (result.affectedRows === 2) {
+                    console.log("Existing user updated.");
+                } else {
+                    console.log("No rows affected (possible duplicate with same data).");
+                }
+            
+            });
+            
 
             
             res.redirect("/note");
@@ -203,10 +243,10 @@ app.post("/send-email", async (req, res) => {
 // Create event route
 app.post("/create_event", isAuthenticated, async (req, res) => {
    
-    let { description, publishToCalendar, summary, start, end, startTime, endTime, category ,useAiSuggestion} = req.body;
+    let { publishToCalendar, description, summary, start, end, startTime, endTime, category ,useAiSuggestion} = req.body;
 
-    if (publishToCalendar) {
-
+    if (publishToCalendar == "true" ) {
+      
 
         const accessToken = req.session.tokenData.access_token;
         const oAuth2Client = new google.auth.OAuth2();
@@ -215,7 +255,7 @@ app.post("/create_event", isAuthenticated, async (req, res) => {
         const calendar = google.calendar({ version: 'v3', auth: oAuth2Client });
 
     
-        if (useAiSuggestion) {
+        if (useAiSuggestion == "true") {
             const startT = new Date(`${start}T00:00:00Z`).toISOString(); // Z ensures UTC
             const endT = new Date(`${end}T23:59:59Z`).toISOString(); // Adjust to include entire end day
             
@@ -225,7 +265,7 @@ app.post("/create_event", isAuthenticated, async (req, res) => {
                     timeMax: endT,
                     singleEvents: true,
                     orderBy: 'startTime',
-                     timeZone: 'America/Los_Angeles',
+                    timeZone: 'America/Los_Angeles',
                 });
            console.log("RESULT"+eventsResult);
             const events = eventsResult.data.items || [];
@@ -242,6 +282,8 @@ app.post("/create_event", isAuthenticated, async (req, res) => {
             startTime = suggestedStartTime || startTime;
             endTime = suggestedEndTime || endTime;
         }
+        console.log(startTime);
+        console.log(endTime);
         // Create event object
         const event = {
             summary,
@@ -249,23 +291,25 @@ app.post("/create_event", isAuthenticated, async (req, res) => {
             start: {
       
               dateTime: formatDateTime(start, startTime),
-                timeZone: 'America/Los_Angeles', // Adjust time zone as needed
+                timeZone: 'America/Los_Angeles', 
             },
             end: {
              
-               dateTime: formatDateTime(end, endTime), // Use formatted end time
+               dateTime: formatDateTime(end, endTime), 
                 timeZone: 'America/Los_Angeles',
             },
             colorId: CATEGORY_COLORS[category] || 'default',
+            timeZone: 'America/Los_Angeles',
            
         };
 
         try {
-        
+            
             const eventResponse = await calendar.events.insert({
                 calendarId: 'primary',
                 resource: event,
                 colorID: category
+               // timeZone:  'America/Los_Angeles'
             });
             console.log("Event created:", eventResponse.data);
           
@@ -281,8 +325,33 @@ app.post("/create_event", isAuthenticated, async (req, res) => {
             res.status(500).send("Error creating calendar event.");
         }
     } else {
+       // let description =req.body;
 
-          
+        try {
+        
+
+            const summary = null;
+            const query = `
+            INSERT INTO notes (user_email, summary, descriptions)
+            VALUES (?, ?, ?);
+        `;
+    
+        const userEmail = req.session.user.email;
+        const parameters = [
+            userEmail,
+            summary || "Quick note", // Default summary if not provided
+            description || "",       // Default empty description if not provided
+        ];
+    
+        // Execute the query and log the raw result
+        const result = await myData.execute(query, parameters);
+
+            console.log("Regular note saved:", result);
+            res.redirect("/note");
+        } catch (error) {
+            console.error("Error saving note:", error.message);
+            res.status(500).send("Error saving note.");
+        }
     
     }
 });
@@ -302,16 +371,9 @@ app.get("/completed_notes", isAuthenticated, async (req, res) => {
         oneWeekFromNow.setDate(oneWeekFromNow.getDate() + 30); // Add 7 days
         const timeMax =  oneWeekFromNow.toISOString();
         
-        //Get the regular note
-  //add regusnote
-        // const [rows] = await myData.query("SELECT title, description, time FROM notes");
-
-        // // Convert the rows to JSON
-        // const dataBaseResult = JSON.stringify(rows);
-
-        // console.log("JSON Result:", jsonResult);
-        
-        
+    
+        const userEmail = req.session.user.email;
+        const [rows] = await myData.query("SELECT id, summary, descriptions FROM notes WHERE user_email = ? ",[userEmail]);
 
 
         const eventsResult = await calendar.events.list({
@@ -320,19 +382,19 @@ app.get("/completed_notes", isAuthenticated, async (req, res) => {
             timeMax: timeMax,
             singleEvents: true,
             orderBy: 'startTime',
+            timeZone:  'America/Los_Angeles'
         });
-
-     
-        
+      
         if (eventsResult.data && eventsResult.data.items) {
-            const events = eventsResult.data.items; // Extract events from the response
 
+            const events = eventsResult.data.items; // Extract events from the response
+        
+          
             // Render the completed notes page with events
             res.render("complete_note.ejs", {
                 isAuthenticated: !!req.session.user,
-             //   notes: dataBaseResult,
+                notes: rows,
                 events: events,
-               
             });
 
         } else {
@@ -344,10 +406,33 @@ app.get("/completed_notes", isAuthenticated, async (req, res) => {
         res.status(500).send("Error fetching events.");
     }
 });
+// const formatDateTime = (date, time) => {
+//     const dt = new Date(`${date}T${time}`);
+//     return dt.toISOString().slice(0, 19); // Format as YYYY-MM-DDTHH:mm:ss
+// };
 const formatDateTime = (date, time) => {
     const dt = new Date(`${date}T${time}`);
-    return dt.toISOString().slice(0, 19); // Format as YYYY-MM-DDTHH:mm:ss
+    const options = {
+        timeZone: 'America/Los_Angeles',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hourCycle: 'h23', // 24-hour format
+    };
+
+    // Format in Los Angeles time zone
+    const formatter = new Intl.DateTimeFormat('en-US', options);
+    const parts = formatter.formatToParts(dt);
+
+    // Assemble formatted date-time as "YYYY-MM-DDTHH:mm:ss"
+    const formattedDateTime = `${parts.find(p => p.type === 'year').value}-${parts.find(p => p.type === 'month').value}-${parts.find(p => p.type === 'day').value}T${parts.find(p => p.type === 'hour').value}:${parts.find(p => p.type === 'minute').value}:${parts.find(p => p.type === 'second').value}`;
+
+    return formattedDateTime;
 };
+
 app.delete('/delete_event/:id', async (req, res) => {
     const eventId = req.params.id;
     const accessToken = req.session.tokenData.access_token;
@@ -373,7 +458,25 @@ app.delete('/delete_event/:id', async (req, res) => {
     }
 });
 
-async function generateChatResponse(events, summary, category, startDate, endDate) {
+app.delete('/delete_note/:id', isAuthenticated, async (req, res) => {
+    try {
+        const noteId = req.params.id;
+        const query = "DELETE FROM notes WHERE id = ?";
+
+        const [result] = await myData.query(query, [noteId]);
+
+        if (result.affectedRows > 0) {
+            res.status(200).send("Note deleted successfully");
+        } else {
+            res.status(404).send("Note not found");
+        }
+    } catch (error) {
+        console.error("Error deleting note:", error);
+        res.status(500).send("Failed to delete note");
+    }
+});
+
+async function generateChatResponse(events, summary,description, category, startDate, endDate) {
    
 
 // Initialize OpenAI API with the API key from the environment variable
@@ -390,11 +493,13 @@ async function generateChatResponse(events, summary, category, startDate, endDat
     ${eventsSummary}
     The user wants to add a new event with the following details:
     Summary: ${summary}
+    Description: ${description}
     Category: ${category}
     Date: ${startDate} to ${endDate}
 
-    The event should be scheduled during regular hours (8 AM to 10 PM) and should be realistic for a task like '${summary}', which usually takes about 1-2 hours.
-    Please suggest the optimal start and end time for this new event based on the user's current schedule and the category of the event.
+    The event should be scheduled during regular hours (8 AM to 10 PM) and should be realistic for a task like '${summary}', which usually takes about 1 hours.
+    Please suggest the optimal start and end time for this new event based on the user's current schedule, description and the category of the event. Important, no overlapping.
+    If the time from 8 AM to 10PM if full then you can suggest a time that you think it is fit.
     Return the format in the format: 'Start Time: 00:00', and then a new line with 'End Time: 00:00', with the zeroes seen in the example acting as placeholders.
     I only want the output specified to be printed, and nothing else.
     `;
@@ -416,31 +521,51 @@ async function generateChatResponse(events, summary, category, startDate, endDat
       //  console.log("OpenAI response:", response.data);
        console.log("OpenAI response:",  response.choices[0].message);
        // console.log("OpenAI response:",  response.data.choices[0].message.content);
-       return response.choices[0].message.trim();
+       return response.choices[0].message.content;
     } catch (error) {
         console.error("Error calling OpenAI API:", error.message);
         return "Start Time: 00:00\nEnd Time: 23:59"; // Default fallback times
     }
 }
 
+
 function parseSuggestedTime(aiResponse) {
     try {
-        const lines = aiResponse.strip().split('\n');
+        const lines = aiResponse.split('\n');
+        
+        // Find lines containing "Start Time" and "End Time"
         const startTimeLine = lines.find(line => line.includes("Start Time"));
         const endTimeLine = lines.find(line => line.includes("End Time"));
 
-        const startTimeStr = startTimeLine.split(": ")[1].trim().replace('**', '');
-        const endTimeStr = endTimeLine.split(": ")[1].trim().replace('**', '');
+        if (!startTimeLine || !endTimeLine) {
+            throw new Error("Missing start or end time in response");
+        }
 
+        //strings to HH:mm:ss format
+        const normalizeTime = (timeStr) => {
+            const [hours, minutes] = timeStr.split(":");
+            const normalized = `${hours.padStart(2, '0')}:${minutes.padStart(2, '0')}:00`;
+            return normalized;
+        };
+
+        const startTimeStr = normalizeTime(startTimeLine.split(": ")[1]?.trim());
+        const endTimeStr = normalizeTime(endTimeLine.split(": ")[1]?.trim());
+
+        if (!startTimeStr || !endTimeStr) {
+            throw new Error("Invalid time format");
+        }
+
+        // Convert to ISO time format with local timezone adjustment if needed
         const startTime = new Date(`1970-01-01T${startTimeStr}Z`).toISOString().slice(11, 19);
         const endTime = new Date(`1970-01-01T${endTimeStr}Z`).toISOString().slice(11, 19);
 
         return { startTime, endTime };
     } catch (error) {
         console.error("Error parsing suggested time:", error);
-        return { startTime: '00:00:00', endTime: '23:59:59' };  // Default fallback times
+        return { startTime: '00:00:00', endTime: '23:59:59' }; // Fallback times
     }
 }
+
 
 
 // Start server

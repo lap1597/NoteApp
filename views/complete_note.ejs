@@ -40,32 +40,58 @@
 </style>
 
 <h1 class="mb-4">Completed Notes</h1>
-<!-- <pre><%= JSON.stringify(events, null, 2) %></pre> Debug output -->
+
 <div class="row">
+    <!-- Render Notes -->
+    <% if (notes && notes.length > 0) { %>
+        <% notes.forEach(note => { %>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title"><%= note.summary || "No Title" %></h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text">
+                            <strong>Description:</strong> <%= note.descriptions || "No description available" %>
+                        </p>
+                        <button class="btn btn-danger" onclick="deleteNote('<%= note.id %>')">Delete</button>
+                    </div>
+                    
+                </div>
+            </div>
+        <% }) %>
+    <% } else { %>
+        <div class="col-12 no-events">
+            <p>No Quick notes available.</p>
+        </div>
+    <% } %>
+
+    <!-- Render Events -->
     <% if (events && events.length > 0) { %>
         <% events.forEach(event => { %>
             <div class="col-md-6">
                 <div class="card">
-                    <div class="card-header" >
-                        <h5 class="card-title"><%= event.summary %></h5>
-                        <!-- <%= event.summary %> -->
+                    <div class="card-header">
+                        <h5 class="card-title"><%= event.summary || "No Title" %></h5>
                     </div>
                     <div class="card-body">
-                        <!-- <h5 class="card-title"><%= event.summary %></h5> -->
                         <p class="card-text">
-                            <strong>Start:</strong> <%= formatDate(event.start.dateTime || event.start.date)  %><br>
-                            <strong>End:</strong> <%= formatDate(event.end.dateTime || event.end.date)  %><br>
-                            <strong>Description:</strong> <%= event.description.replace("CreatedFromWebpage", "") %>
+                            <% if (event.start && (event.start.dateTime || event.start.date)) { %>
+                                <strong>Start:</strong> <%= formatDate(event.start.dateTime || event.start.date) %><br>
+                            <% } %>
+                            <% if (event.end && (event.end.dateTime || event.end.date)) { %>
+                                <strong>End:</strong> <%= formatDate(event.end.dateTime || event.end.date) %><br>
+                            <% } %>
+                            <strong>Description:</strong> <%= event.description ? event.description.replace("CreatedFromWebpage", "") : "No description available" %>
                         </p>
                         <button class="btn btn-danger" onclick="deleteEvent('<%= event.id %>')">Delete</button>
-
                     </div>
                 </div>
             </div>
         <% }) %>
     <% } else { %>
         <div class="col-12 no-events">
-            <p>No completed notes available.</p>
+            <p>No events from Calendar.</p>
         </div>
     <% } %>
 </div>
@@ -83,6 +109,23 @@
     return date.toLocaleString('en-US', options).replace(',', ''); // Format to local string and remove the comma
 }
 // This will handle the delete action when the delete button is clicked
+async function deleteNote(noteId) {
+    try {
+        const response = await fetch(`/delete_note/${noteId}`, {
+            method: 'DELETE',
+        });
+
+        if (response.ok) {
+            console.log("Note deleted successfully");
+            // Optionally, reload the page or remove the note from the UI
+            window.location.reload();
+        } else {
+            console.error("Failed to delete the note");
+        }
+    } catch (error) {
+        console.error("Error deleting note:", error);
+    }
+}
 async function deleteEvent(eventId) {
     try {
         const response = await fetch(`/delete_event/${eventId}`, {
