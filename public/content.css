@@ -1,0 +1,315 @@
+html,
+body {
+  height: 100%;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  justify-content: stretch;
+}
+
+header,
+footer {
+  flex: 0 0 auto;
+}
+
+main {
+  text-align: center;
+  padding: 5vmin;
+  flex: 1 0 auto;
+}
+
+h1 {
+  text-align: center;
+}
+
+p {
+  color: grey;
+}
+
+.profile {
+  height: 200px;
+  width: 200px;
+  object-fit: cover;
+  border-radius: 50%;
+}
+form {
+  margin-top: 50px;
+}
+
+.feedback-input {
+  color: black;
+  font-weight: 500;
+  font-size: 18px;
+  border-radius: 5px;
+  line-height: 22px;
+  background-color: transparent;
+  border: 2px solid #3586ff;
+  transition: all 0.3s;
+  padding: 13px;
+  margin-bottom: 15px;
+  width: 20%;
+  box-sizing: border-box;
+  outline: 0;
+}
+
+.feedback-input:focus {
+  border: 2px solid #3586ff;
+}
+
+textarea {
+  height: 150px;
+  width: 50%;
+  line-height: 150%;
+  resize: vertical;
+}
+
+[type="submit"] {
+  width: 20%;
+  background: #3586ff;
+  border-radius: 5px;
+  border: 0;
+  cursor: pointer;
+  color: white;
+  font-size: 24px;
+  padding-top: 10px;
+  padding-bottom: 10px;
+  transition: all 0.3s;
+  margin-top: -4px;
+  font-weight: 700;
+}
+[type="submit"]:hover {
+  background: #14d373;
+  transform: scale(1.3);
+  z-index: 1;
+}
+.nav-item{
+  transform: all 0.3s;
+}
+.nav-item:hover{
+  text-emphasis: white;
+  transform: scale(1.3);
+
+}
+
+.form-group {
+  display: flex; /* Use flexbox for alignment */
+  align-items: center; /* Center items vertically */
+  margin-bottom: 15px; /* Space between form groups */
+}
+
+label {
+  flex: 1; /* Take up 1 part of the space */
+  margin-right: 10px; /* Space between label and input */
+  text-align: right; /* Align text to the right */
+}
+
+input[type="text"],
+input[type="date"],
+input[type="time"],
+textarea,
+select {
+  flex: 2; /* Take up 2 parts of the space */
+  padding: 10px; /* Inner spacing */
+  border: 1px solid #ccc; /* Light border */
+  border-radius: 4px; /* Rounded corners */
+  font-size: 16px; /* Increase font size */
+}
+
+/* Change the border color on focus */
+input[type="text"]:focus,
+input[type="date"]:focus,
+input[type="time"]:focus,
+textarea:focus,
+select:focus {
+  border-color: #007bff; /* Bootstrap primary color */
+  outline: none; /* Remove outline */
+}
+
+#contactForm {
+  max-width: 500px; /* Set a maximum width for the contact form */
+  margin: 20px auto; /* Center the form horizontally */
+  padding: 20px; /* Inner spacing */
+  background-color: #f8f9fa; /* Light background for the form */
+  border-radius: 8px; /* Rounded corners */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Subtle shadow for depth */
+}
+
+ul#notesList {
+  list-style-type: none;
+  padding: 0;
+
+}
+
+ul#notesList li {
+  background-color: white;
+  border: 1px solid  #3586ff;
+  border-radius: 5px;
+  padding: cover;
+  margin-top: 10px;
+  justify-content: space-between;
+  display: flex;
+
+}
+
+ul#notesList li deleteButton {
+  display: inline-block;
+  background-color:#3586ff;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  padding: 10px 10px;
+  cursor: pointer;
+  margin: 10px;
+
+}
+
+/* ul#notesList li editButton {
+  display: inline-block;
+  background-color:#3586ff;
+;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  padding: 10px 10px;
+  cursor: pointer;
+  margin: 10px;
+
+} */
+
+ul#notesList li saveButton {
+  display: inline-block;
+  background-color:#23c82e;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  padding: 10px 10px;
+  cursor: pointer;
+  margin: 10px;
+
+}
+
+ul#notesList li editButton:hover {
+  background-color: #23c82e;
+  transition: all 0.7s;
+  
+}
+
+ul#notesList li deleteButton:hover {
+  background-color: #dc3545;
+  transition: all 0.7s;
+  
+}
+
+ul#notesList li input{
+
+  width: 60%;
+  border: none;
+  padding: 0;
+  border-radius: 5px;
+  background-color: white;
+
+}
+
+ul#notesList li p {
+  margin: 10px;
+  padding-top: 10px;
+  color: black;
+}
+
+#inviteContainer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 20px;
+  margin-bottom: 20px;
+}
+
+#inviteeInput {
+  color: black;
+  font-weight: 400;
+  font-size: 18px;
+  border-radius: 5px;
+  line-height: 22px;
+  background-color: transparent;
+  border: 2px solid #3586ff;
+  transition: all 0.3s;
+  padding: 13px;
+  width: 20%;
+  box-sizing: border-box;
+  outline: 0;
+}
+
+#inviteeInput:focus {
+  border: 2px solid #1e70bf;
+}
+
+/* about */
+.slide-container {
+  max-width: 1120px;
+  width: 100%;
+  padding: 40px 0px;
+}
+.card-container {
+  display: flex;
+  gap: 35px;
+}
+.slide-content {
+  margin: 0px 40px;
+}
+.image-content,
+.card-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 10px 14px;
+}
+.image-content {
+  row-gap: 5px;
+  position: relative;
+  padding: 25px 0px;
+}
+.overlay {
+  position: absolute;
+  left: 0px;
+  top: 0px;
+  height: 100%;
+  width: 100%;
+  background-color: #4070f4;
+  border-radius: 25px 25px 0px 25px;
+}
+.card {
+  width: 320px;
+  border-radius: 25px;
+  background-color: white;
+}
+
+.card-image {
+  position: relative;
+  height: 150px;
+  width: 150px;
+  object-fit: cover;
+  border-radius: 50%;
+  background: white;
+  padding: 3px;
+}
+.card-image .card-img {
+  height: 100%;
+  width: 100%;
+  border-radius: 50%;
+  border: 4px solid #4070f4;
+}
+
+.name {
+  font-size: 18px;
+  font-weight: 500;
+  color: #333;
+}
+
+.description {
+  font-size: 14px;
+  color: #707070;
+  text-align: center;
+}

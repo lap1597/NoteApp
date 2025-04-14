@@ -1,0 +1,89 @@
+<%- include("content/header.ejs") %>
+
+<h1>Notes App</h1>
+<form id="noteForm" action="/create_event" method="post">
+    <div>
+        <textarea id="noteInput" name="description" placeholder="Write your note here..." required></textarea>
+        <br>
+        
+        <label for="publishToCalendar">Publish to Google Calendar</label>
+        <input type="checkbox" id="publishToCalendar" name="publishToCalendar" value="true">
+    </div>
+    <div id="calendarInputs" style="display: none;">
+        <label for="summary">Event Title:</label>
+        <input type="text" name="summary" id="summary" class="feedback-input" required><br>
+
+        <div id="dateInputs">
+            <label for="start">Start Date:</label>
+            <input type="date" id="start" name="start" class="feedback-input" required><br>
+
+            <label for="end">End Date:</label>
+            <input type="date" id="end" name="end" class="feedback-input" required><br>
+        </div>
+
+        <div id="timeInputs">
+            <label for="startTime">Start Time:</label>
+            <input type="time" id="startTime" name="startTime" class="feedback-input" required><br>
+
+            <label for="endTime">End Time:</label>
+            <input type="time" id="endTime" name="endTime" class="feedback-input" required><br>
+        </div>
+
+        <label for="category">Category:</label>
+        <select id="category" name="category" class="feedback-input" required>
+            <option value="class">Class</option>
+            <option value="study">Study Session</option>
+            <option value="meeting">Meeting</option>
+            <option value="project">Project Work</option>
+            <option value="break">Break</option>
+            <option value="personal">Personal Task</option>
+        </select><br>
+        <div>
+        
+            <label for="useAiSuggestion">Use AI to Suggest Time:</label>
+            <input type="checkbox" id="useAiSuggestion" name="useAiSuggestion" value="true"><br>
+            
+        </div>
+    </div>
+    <div>
+   
+    <button type="submit">Add Note</button>
+    </div>
+</form>
+
+<script>
+    document.getElementById('publishToCalendar').addEventListener('change', function() {
+        console.log('publishToCalendar changed');
+        var calendarInputs = document.getElementById('calendarInputs');
+        calendarInputs.style.display = this.checked ? 'block' : 'none';
+    });
+
+    // document.getElementById('useAiSuggestion').addEventListener('change', function() {
+    //     console.log('useAiSuggestion changed');
+    //     var timeInputs = document.getElementById('timeInputs');
+    //     timeInputs.style.display = this.checked ? 'none' : 'block';
+    // });
+    document.getElementById('useAiSuggestion').addEventListener('change', function() {
+        console.log('useAiSuggestion changed');
+        var timeInputs = document.getElementById('timeInputs');
+        var startTime = document.getElementById('startTime');
+        var endTime = document.getElementById('endTime');
+
+        if (this.checked) {
+            timeInputs.style.display = 'none';
+            // Remove required attributes when AI suggestion is used
+            startTime.removeAttribute('required');
+            endTime.removeAttribute('required');
+        } else {
+            timeInputs.style.display = 'block';
+            // Add required attributes back when AI suggestion is not used
+            startTime.setAttribute('required', 'required');
+            endTime.setAttribute('required', 'required');
+        }
+    });
+</script>
+
+
+
+
+<%- include("content/footer.ejs") %>

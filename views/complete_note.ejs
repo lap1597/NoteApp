@@ -1,0 +1,119 @@
+<%- include("content/header.ejs") %>
+
+<style>
+    .card {
+        margin-bottom: 1rem;
+    }
+    .card-title {
+        font-size: 1.5rem;
+        font-weight: bold;
+     
+    }
+    .card-text {
+        font-size: 1rem;
+        color: black;
+    }
+    .card-header {
+      
+        background-color:rgb(52, 124, 241); 
+    }
+    .color-default {
+        background-color: #f66d3b; /* Neutral background */
+    }
+    .no-events {
+        text-align: center; /* Center the message */
+        font-size: 1.2rem; /* Slightly larger text for emphasis */
+        margin-top: 2rem; /* Add some space above */
+        color: #555; /* Dimmed color for a softer look */
+    }
+    .btn-danger {
+        width: auto;
+        background-color: #dc3545;
+        border-color: #dc3545;
+    }
+    .btn-danger:hover {
+        background-color: #c82333;
+        border-color: #bd2130;
+        transform: scale(1.3);
+    }
+
+</style>
+
+<h1 class="mb-4">Completed Notes</h1>
+<!-- <pre><%= JSON.stringify(events, null, 2) %></pre> Debug output -->
+<div class="row">
+    <% if (events && events.length > 0) { %>
+        <% events.forEach(event => { %>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header" >
+                        <h5 class="card-title"><%= event.summary %></h5>
+                        <!-- <%= event.summary %> -->
+                    </div>
+                    <div class="card-body">
+                        <!-- <h5 class="card-title"><%= event.summary %></h5> -->
+                        <p class="card-text">
+                            <strong>Start:</strong> <%= formatDate(event.start.dateTime || event.start.date)  %><br>
+                            <strong>End:</strong> <%= formatDate(event.end.dateTime || event.end.date)  %><br>
+                            <strong>Description:</strong> <%= event.description.replace("CreatedFromWebpage", "") %>
+                        </p>
+                        <button class="btn btn-danger" onclick="deleteEvent('<%= event.id %>')">Delete</button>
+
+                    </div>
+                </div>
+            </div>
+        <% }) %>
+    <% } else { %>
+        <div class="col-12 no-events">
+            <p>No completed notes available.</p>
+        </div>
+    <% } %>
+</div>
+<script>
+   function formatDate(dateTime) {
+    const options = { 
+        year: 'numeric', 
+        month: '2-digit', 
+        day: '2-digit', 
+        hour: '2-digit', 
+        minute: '2-digit', 
+        hour12: false 
+    };
+    const date = new Date(dateTime);
+    return date.toLocaleString('en-US', options).replace(',', ''); // Format to local string and remove the comma
+}
+// This will handle the delete action when the delete button is clicked
+async function deleteEvent(eventId) {
+    try {
+        const response = await fetch(`/delete_event/${eventId}`, {
+            method: 'DELETE',
+        });
+
+        if (response.ok) {
+            console.log("Event deleted successfully");
+            // Optionally, reload the page or remove the event from the UI
+            window.location.reload();
+        } else {
+            console.error("Failed to delete the event");
+        }
+    } catch (error) {
+        console.error("Error deleting event:", error);
+    }
+}
+
+</script>
+<%- include("content/footer.ejs") %>
+<!-- <%
+// Server-side function to format the date and time
+function formatDate(dateTime) {
+    const options = { 
+        year: 'numeric', 
+        month: '2-digit', 
+        day: '2-digit', 
+        hour: '2-digit', 
+        minute: '2-digit', 
+        hour12: false 
+    };
+    const date = new Date(dateTime);
+    return date.toLocaleString('en-US', options).replace(',', ''); // Format to local string and remove the comma
+} %> -->
